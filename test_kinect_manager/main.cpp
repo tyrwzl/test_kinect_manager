@@ -20,9 +20,12 @@ int main(int argc, char** argv)
 {
 	// if use all source, you use like below.
 	// KinectManager km(depth_flag | color_flag | infrared_flag | body_flag);
-	KinectManager km(DEPTH_FLAG);
-	const int depth_width = km.getDepthWidth();
+	KinectManager km(FrameSourceTypes_Depth | FrameSourceTypes_Color);
+
+	const int depth_width  = km.getDepthWidth();
 	const int depth_height = km.getDepthHeight();
+	const int color_width  = km.getColorWidth();
+	const int color_height = km.getColorHeight();
 
 	std::string fileid = "test";
 	std::string filepath = fileid;
@@ -37,19 +40,24 @@ int main(int argc, char** argv)
 	INT64 past_time_stamp = 0;
 	std::vector<INT64> too_long_time_stamps;
 
-	cv::Mat depth_data(depth_height, depth_width, CV_16UC1);
+	cv::Mat depth_data(depth_height, depth_width, CV_16UC1, cv::Scalar(255));
+	cv::Mat color_coordinated_data(depth_height, depth_width, CV_8UC4);
 
 	std::vector<int> compression_params;
 	compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
 	compression_params.push_back(0);
 
 	while (1) {
-		if (km.getDepthData(reinterpret_cast<UINT16*>(depth_data.data), &now_time_stamp)) {
+		if (km.getColoredDepthAndDepthImage(reinterpret_cast<BYTE*>(color_coordinated_data.data), 
+			reinterpret_cast<UINT16*>(depth_data.data), &now_time_stamp)) {
 			INT64 diff_time_stamp = now_time_stamp - past_time_stamp;
 			if (diff_time_stamp > 400000) too_long_time_stamps.push_back(now_time_stamp);
 
 			std::string filename = fileid + "//depth//" + std::to_string(now_time_stamp) + ".png";
 			cv::imwrite(filename, depth_data, compression_params);
+			filename = fileid + "//color//" + std::to_string(now_time_stamp) + ".bmp";
+			cv::imwrite(filename, color_coordinated_data);
+
 			past_time_stamp = now_time_stamp;
 		}
 
