@@ -48,21 +48,21 @@ int main(int argc, char** argv)
 	compression_params.push_back(0);
 
 	while (1) {
-		if (km.getColoredDepthAndDepthImage(reinterpret_cast<BYTE*>(color_coordinated_data.data), 
-			reinterpret_cast<UINT16*>(depth_data.data), &now_time_stamp)) {
+		if (km.getDepthData(reinterpret_cast <UINT16*>(depth_data.data), &now_time_stamp)) {
 			INT64 diff_time_stamp = now_time_stamp - past_time_stamp;
 			if (diff_time_stamp > 400000) too_long_time_stamps.push_back(now_time_stamp);
 
 			std::string filename = fileid + "//depth//" + std::to_string(now_time_stamp) + ".png";
 			cv::imwrite(filename, depth_data, compression_params);
-			filename = fileid + "//color//" + std::to_string(now_time_stamp) + ".bmp";
-			cv::imwrite(filename, color_coordinated_data);
-
+			//if (km.getColoredDepthData(reinterpret_cast<UINT16*>(depth_data.data), reinterpret_cast<BYTE*>(color_coordinated_data.data))) {
+			//	filename = fileid + "//color//" + std::to_string(now_time_stamp) + ".bmp";
+			//	cv::imwrite(filename, color_coordinated_data);
+			//}
 			past_time_stamp = now_time_stamp;
 		}
 
 		if (isZeroMat(depth_data)) break;
-		if (cv::waitKey(10) == 'q') break;
+		//if (cv::waitKey(1) == 'q') break;
 	}
 
 	std::ofstream ofs(fileid + "//" + fileid + ".log", std::ios::out);

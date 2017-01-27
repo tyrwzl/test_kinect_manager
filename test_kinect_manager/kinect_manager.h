@@ -3,14 +3,6 @@
 
 #include "Kinect.h"
 
-const unsigned int DEPTH_HEIGHT = 424;
-const unsigned int DEPTH_WIDTH  = 512;
-
-const unsigned int COLOR_HEIGHT = 1080;
-const unsigned int COLOR_WIDTH  = 1920;
-
-
-
 template<class Interface>
 inline void SafeRelease(Interface *& pInterfaceToRelease)
 {
@@ -55,14 +47,14 @@ public:
 		depth_camera_principal_point_x = camera_intrinsics.PrincipalPointX;
 		depth_camera_principal_point_y = camera_intrinsics.PrincipalPointY;
 		
-		hr = kinect_sensor->OpenMultiSourceFrameReader(source_flag, &multi_source_frame_reader);
-		if (FAILED(hr))
-			std::cerr << "Error at OpenMultiSourceFrameReader : " << std::hex << hr << std::endl;
+		//hr = kinect_sensor->OpenMultiSourceFrameReader(source_flag, &multi_source_frame_reader);
+		//if (FAILED(hr))
+		//	std::cerr << "Error at OpenMultiSourceFrameReader : " << std::hex << hr << std::endl;
+		//hr = multi_source_frame_reader->SubscribeMultiSourceFrameArrived(&waitable_handle);
+		//if (FAILED(hr))
+		//	std::cerr << "Error at SubscribeMultiSourceFrameArrived : " << std::hex << hr << std::endl;
 
-		hr = multi_source_frame_reader->SubscribeMultiSourceFrameArrived(&waitable_handle);
-		if (FAILED(hr))
-			std::cerr << "Error at SubscribeMultiSourceFrameArrived : " << std::hex << hr << std::endl;
-		/* initialization of depth source
+		// initialization of depth source
 		if (source_flag & FrameSourceTypes_Depth) {
 			IDepthFrameSource* depth_frame_source;
 			hr = kinect_sensor->get_DepthFrameSource(&depth_frame_source);
@@ -101,11 +93,11 @@ public:
 			hr = color_frame_source->OpenReader(&color_frame_reader);
 			if (FAILED(hr))
 				std::cerr << "Error at OpenReader: " << std::hex << hr << std::endl;
-
+	
 			hr = color_frame_reader->SubscribeFrameArrived(&color_frame_event);
 			if (FAILED(hr))
 				std::cerr << "Error at SubscribeFrameArrived: " << std::hex << hr << std::endl;
-
+				
 			IFrameDescription* color_frame_description;
 			hr = color_frame_source->get_FrameDescription(&color_frame_description);
 			if (FAILED(hr))
@@ -119,28 +111,27 @@ public:
 			SafeRelease(color_frame_description);
 			SafeRelease(color_frame_source);
 		}
-		*/
 	}
 
 	int getDepthHeight() {
-		return DEPTH_HEIGHT;
+		return depth_height;
 	}
 
 	int getDepthWidth() {
-		return DEPTH_WIDTH;
+		return depth_width;
 	}
 
 	int getColorHeight() {
-		return COLOR_HEIGHT;
+		return color_height;
 	}
 
 	int getColorWidth() {
-		return COLOR_WIDTH;
+		return color_width;
 	}
 
 	bool isValidColorRange(int x, int y)
 	{
-		return ((0 <= x) && (x < COLOR_WIDTH)) && ((0 <= y) && (y < COLOR_HEIGHT));
+		return ((0 <= x) && (x < color_width)) && ((0 <= y) && (y < color_height));
 	}
 
 	bool isValidDepthRange(int index, const UINT16* depth_buffer)
@@ -148,6 +139,7 @@ public:
 		return (500 <= depth_buffer[index]) && (depth_buffer[index] <= 8000);
 	}
 
+	/*
 	bool getColoredDepthAndDepthImage(BYTE* colored_depth_buffer, UINT16* depth_buffer, INT64* relative_time) {
 		DWORD result = WaitForSingleObjectEx(reinterpret_cast<HANDLE>(waitable_handle), 0, FALSE);
 		if (result != WAIT_OBJECT_0)
@@ -253,9 +245,8 @@ public:
 		SafeRelease(multi_source_frame_arrived_event);
 
 		return true;
-
-	}
-	/*
+	}*/
+	
 	bool getDepthData(UINT16* depth_buffer, INT64* relative_time) {
 		DWORD result = WaitForSingleObjectEx(reinterpret_cast<HANDLE>(depth_frame_event), 0, FALSE);
 		if (result != WAIT_OBJECT_0)
@@ -282,7 +273,7 @@ public:
 		IDepthFrame* depth_frame;
 		hr = depth_frame_reference->AcquireFrame(&depth_frame);
 		if (FAILED(hr)) {
-			std::cerr << "Error at AcquireFrame: " << std::hex << hr << std::endl;
+			std::cerr << "Error at AcquireDepthFrame: " << std::hex << hr << std::endl;
 			return false;
 		}
 
@@ -323,23 +314,31 @@ public:
 			return false;
 		}
 
-
 		IColorFrame* color_frame;
 		hr = color_frame_reference->AcquireFrame(&color_frame);
 		if (FAILED(hr)) {
-			std::cerr << "Error at AcquireFrame: " << std::hex << hr << std::endl;
+			std::cerr << "Error at AcquireColorFrame: " << std::hex << hr << std::endl;
 			return false;
 		}
 
+		/*
+		IColorFrame* color_frame;
+		HRESULT hr = color_frame_reader->AcquireLatestFrame(&color_frame);
+		if (FAILED(hr)) {
+			std::cerr << "Error at AcquireLatestFrame: " << std::hex << hr << std::endl;
+			return false;
+		}
+		*/
+
 		const unsigned int color_buffer_size = color_width * color_height * 4 * sizeof(BYTE);
-		BYTE* color_buffer = (BYTE*)malloc(color_buffer_size);
-		hr = color_frame->CopyConvertedFrameDataToArray(color_buffer_size, color_buffer, ColorImageFormat_Bgra);
+		std::vector<BYTE> color_buffer(color_buffer_size);
+		hr = color_frame->CopyConvertedFrameDataToArray(color_buffer_size, &color_buffer[0], ColorImageFormat_Bgra);
 		if (FAILED(hr)) {
 			std::cerr << "Error at CopyConvertedFrameDataToArray: " << std::hex << hr << std::endl;
 			return false;
 		}
 
-		std::vector<ColorSpacePoint> color_space_points(color_width * color_height);
+		std::vector<ColorSpacePoint> color_space_points(depth_width * depth_height);
 		const unsigned int depth_buffer_size = depth_width * depth_height;
 		hr = coordinate_mapper->MapDepthFrameToColorSpace(depth_buffer_size, depth_buffer, color_space_points.size(), &color_space_points[0]);
 		if (FAILED(hr)) {
@@ -366,9 +365,13 @@ public:
 			}
 		}
 
+		SafeRelease(color_frame);
+		SafeRelease(color_frame_reference);
+		SafeRelease(color_frame_arrived_event);
+
 		return true;
 	}
-	*/
+	
 	~KinectManager() {
 		SafeRelease(kinect_sensor);
 	}
@@ -388,17 +391,17 @@ private:
 	float depth_camera_principal_point_x;
 	float depth_camera_principal_point_y;
 
-	IMultiSourceFrameReader* multi_source_frame_reader;
-	WAITABLE_HANDLE waitable_handle;
+	//IMultiSourceFrameReader* multi_source_frame_reader;
+	//WAITABLE_HANDLE waitable_handle;
 
-	//IDepthFrameReader* depth_frame_reader;
-	//WAITABLE_HANDLE depth_frame_event;
-	//int depth_width;
-	//int depth_height;
+	IDepthFrameReader* depth_frame_reader;
+	WAITABLE_HANDLE depth_frame_event;
+	int depth_width;
+	int depth_height;
 
-	//IColorFrameReader* color_frame_reader;
-	//WAITABLE_HANDLE color_frame_event;
-	//int color_width;
-	//int color_height;
+	IColorFrameReader* color_frame_reader;
+	WAITABLE_HANDLE color_frame_event;
+	int color_width;
+	int color_height;
 
 };
