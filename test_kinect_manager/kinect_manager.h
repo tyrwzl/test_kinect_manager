@@ -1,8 +1,15 @@
 #pragma once
 #include <iostream>
-
 #include "Kinect.h"
 
+<<<<<<< HEAD
+=======
+const unsigned int DEPTH_FLAG    = (1 << 0);
+const unsigned int COLOR_FLAG    = (1 << 1);
+const unsigned int INFRARED_FLAG = (1 << 2);
+const unsigned int BODY_FLAG     = (1 << 3);
+
+>>>>>>> parent of 7dba251... [change to Multisource]
 template<class Interface>
 inline void SafeRelease(Interface *& pInterfaceToRelease)
 {
@@ -13,29 +20,20 @@ inline void SafeRelease(Interface *& pInterfaceToRelease)
 	}
 }
 
-
 class KinectManager
 {
 public:
-
 	KinectManager(const unsigned int source_flag) {
 		HRESULT hr = GetDefaultKinectSensor(&kinect_sensor);
 		if (FAILED(hr))
 			std::cerr << "Error at GetDefaultKinectSensor : " << std::hex << hr << std::endl;
 
-		WCHAR buffer_id[256];
-		hr = kinect_sensor->get_UniqueKinectId(256, buffer_id);
-		if (FAILED(hr))
-			std::cerr << "Error at get_UniqueKinectId : " << std::hex << hr << std::endl;
-		std::wstring wid(buffer_id);
-		kinect_id.assign(wid.begin(), wid.end());
-
-		hr = kinect_sensor->get_CoordinateMapper(&coordinate_mapper);
 		if (FAILED(hr))
 			std::cerr << "Error at get_CoordinateMapper : " << std::hex << hr << std::endl;
 
 		hr = kinect_sensor->Open();
 		if (FAILED(hr))
+<<<<<<< HEAD
 			std::cerr << "Error at Open : " << std::hex << hr << std::endl;
 
 		CameraIntrinsics camera_intrinsics;
@@ -56,6 +54,12 @@ public:
 
 		// initialization of depth source
 		if (source_flag & FrameSourceTypes_Depth) {
+=======
+			std::cerr << "Error at Open: " << std::hex << hr << std::endl;
+
+		// initialization of depth source
+		if (source_flag & DEPTH_FLAG) {
+>>>>>>> parent of 7dba251... [change to Multisource]
 			IDepthFrameSource* depth_frame_source;
 			hr = kinect_sensor->get_DepthFrameSource(&depth_frame_source);
 			if (FAILED(hr))
@@ -84,12 +88,10 @@ public:
 		}
 
 		// initialization of color source
-		if (source_flag & FrameSourceTypes_Color) {
-			IColorFrameSource* color_frame_source;
-			hr = kinect_sensor->get_ColorFrameSource(&color_frame_source);
-			if (FAILED(hr))
-				std::cerr << "Error at get_ColorFrameSource: " << std::hex << hr << std::endl;
+		if (source_flag & COLOR_FLAG)
+			;// TODO : write color initialize procedure
 
+<<<<<<< HEAD
 			hr = color_frame_source->OpenReader(&color_frame_reader);
 			if (FAILED(hr))
 				std::cerr << "Error at OpenReader: " << std::hex << hr << std::endl;
@@ -115,10 +117,13 @@ public:
 
 	int getDepthHeight() {
 		return depth_height;
+=======
+>>>>>>> parent of 7dba251... [change to Multisource]
 	}
 
 	int getDepthWidth() {
 		return depth_width;
+<<<<<<< HEAD
 	}
 
 	int getColorHeight() {
@@ -247,6 +252,14 @@ public:
 		return true;
 	}*/
 	
+=======
+	}
+
+	int getDepthHeight() {
+		return depth_height;
+	}
+
+>>>>>>> parent of 7dba251... [change to Multisource]
 	bool getDepthData(UINT16* depth_buffer, INT64* relative_time) {
 		DWORD result = WaitForSingleObjectEx(reinterpret_cast<HANDLE>(depth_frame_event), 0, FALSE);
 		if (result != WAIT_OBJECT_0)
@@ -290,6 +303,7 @@ public:
 
 		return true;
 	}
+<<<<<<< HEAD
 
 	bool getColoredDepthData(UINT16* depth_buffer, BYTE* colored_depth_buffer) {
 		DWORD result = WaitForSingleObjectEx(reinterpret_cast<HANDLE>(color_frame_event), 0, FALSE);
@@ -371,6 +385,8 @@ public:
 
 		return true;
 	}
+=======
+>>>>>>> parent of 7dba251... [change to Multisource]
 	
 	~KinectManager() {
 		SafeRelease(kinect_sensor);
@@ -382,10 +398,9 @@ private:
 
 	IKinectSensor* kinect_sensor;
 
-	std::string kinect_id;
-
 	ICoordinateMapper* coordinate_mapper;
 
+<<<<<<< HEAD
 	float depth_camera_focal_length_x;
 	float depth_camera_focal_length_y;
 	float depth_camera_principal_point_x;
@@ -394,6 +409,8 @@ private:
 	//IMultiSourceFrameReader* multi_source_frame_reader;
 	//WAITABLE_HANDLE waitable_handle;
 
+=======
+>>>>>>> parent of 7dba251... [change to Multisource]
 	IDepthFrameReader* depth_frame_reader;
 	WAITABLE_HANDLE depth_frame_event;
 	int depth_width;
